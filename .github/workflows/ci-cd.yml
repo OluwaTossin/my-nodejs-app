@@ -36,4 +36,4 @@ jobs:
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > key.pem
           chmod 600 key.pem
-          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@18.204.228.199 "docker pull 147360193006.dkr.ecr.us-east-1.amazonaws.com/myapp:latest && docker run -d -p 80:80 147360193006.dkr.ecr.us-east-1.amazonaws.com/myapp:latest"
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@18.204.228.199 "sudo yum update -y && sudo yum install -y docker && sudo service docker start && docker pull 147360193006.dkr.ecr.us-east-1.amazonaws.com/myapp:latest && docker run -d -p 80:80 147360193006.dkr.ecr.us-east-1.amazonaws.com/myapp:latest"
