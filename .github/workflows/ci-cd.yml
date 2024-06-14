@@ -22,12 +22,10 @@ jobs:
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
-        with:
-          registry: 147360193006.dkr.ecr.us-east-1.amazonaws.com
-          region: us-east-1
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
 
       - name: Push Docker image to ECR
         run: |
@@ -36,11 +34,16 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws s3 cp s3://devops-project-ec2.pem/DevOps-Project-EC2.pem DevOps-Project-EC2.pem
-          chmod 400 DevOps-Project-EC2.pem
-          ssh -o StrictHostKeyChecking=no -i DevOps-Project-EC2.pem ec2-user@18.204.228.199 << EOF
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@18.204.228.199 << EOF
+            sudo yum update -y
+            sudo yum install -y docker
+            sudo service docker start
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set default.region us-east-1
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 147360193006.dkr.ecr.us-east-1.amazonaws.com
             docker pull 147360193006.dkr.ecr.us-east-1.amazonaws.com/myapp:latest
             docker run -d -p 80:80 147360193006.dkr.ecr.us-east-1.amazonaws.com/myapp:latest
           EOF
